@@ -6,8 +6,11 @@
   <style>
     body { font-family: Arial; margin: 24px; max-width: 700px; }
     input, button { padding: 8px; margin: 4px; }
-    #list, #result {
-      border: 1px solid #ddd; padding: 10px; margin-top: 10px; white-space: pre-line;
+    #list, #result, #imageStatus {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin-top: 10px;
+      white-space: pre-line;
     }
   </style>
 </head>
@@ -30,6 +33,11 @@
 <h3>Analisis AI:</h3>
 <div id="result">Belum dianalisis</div>
 
+<h3>Generate Karakter Sesuai Aktifitas:</h3>
+<button onclick="generateImage()">Generate Gambar</button>
+<div id="imageStatus">Belum ada gambar.</div>
+<img id="aiImage" style="max-width:300px;margin-top:12px;display:none;">
+
 <script>
 let data = [];
 
@@ -39,7 +47,7 @@ function render() {
 
   data.forEach((d, i) => {
     total += d.m;
-    text += (i+1) + ". " + d.a + " - " + d.m + " menit\n";
+    text += (i + 1) + ". " + d.a + " - " + d.m + " menit\n";
   });
 
   document.getElementById("total").innerText =
@@ -50,7 +58,7 @@ function render() {
 }
 
 function tambah() {
-  const a = document.getElementById("act").value;
+  const a = document.getElementById("act").value.trim();
   const m = Number(document.getElementById("min").value);
 
   if (!a || !m) return alert("Isi data dengan benar");
@@ -69,11 +77,11 @@ async function analisis() {
   document.getElementById("result").innerText = "Menganalisis...";
 
   const daftar = data.map((d, i) =>
-    (i+1) + ". " + d.a + " - " + d.m + " menit"
+    (i + 1) + ". " + d.a + " - " + d.m + " menit"
   ).join("\n");
 
   try {
-    const res = await fetch("https://activity-ai-backend-sigma.vercel.app/api/analyze", {
+    const res = await fetch("https://activity-ai-backend.vercel.app/api/analyze", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -86,10 +94,56 @@ async function analisis() {
     const json = await res.json();
 
     document.getElementById("result").innerText =
-      json.result || json.error;
+      json.result || json.error || "Tidak ada hasil analisis.";
 
   } catch {
     document.getElementById("result").innerText = "Gagal koneksi ke AI";
+  }
+}
+
+async function generateImage() {
+  if (data.length === 0) {
+    document.getElementById("imageStatus").innerText =
+      "Masukkan aktivitas terlebih dahulu.";
+    return;
+  }
+
+  document.getElementById("imageStatus").innerText =
+    "Sedang membuat gambar...";
+  document.getElementById("aiImage").style.display = "none";
+
+  const daftar = data.map((d, i) =>
+    (i + 1) + ". " + d.a + " - " + d.m + " menit"
+  ).join("\n");
+
+  try {
+    const res = await fetch("https://activity-ai-backend.vercel.app/api/generate-image", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        activities: daftar
+      })
+    });
+
+    const json = await res.json();
+
+    if (json.image) {
+      document.getElementById("aiImage").src =
+        "data:image/png;base64," + json.image;
+
+      document.getElementById("aiImage").style.display = "block";
+      document.getElementById("imageStatus").innerText =
+        "Gambar berhasil dibuat.";
+    } else {
+      document.getElementById("imageStatus").innerText =
+        json.error || "Gagal membuat gambar.";
+    }
+
+  } catch {
+    document.getElementById("imageStatus").innerText =
+      "Gagal menghubungi image API.";
   }
 }
 
