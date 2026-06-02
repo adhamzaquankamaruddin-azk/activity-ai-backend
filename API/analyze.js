@@ -1,67 +1,125 @@
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+let data = [];
 
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
+/* -----------------------------
+   KLASIFIKASI DASAR (NON-AI)
+------------------------------*/
+
+function classify(activity) {
+  const a = activity.toLowerCase();
+
+  const highDopamine = ["tiktok", "reels", "instagram", "game", "youtube shorts", "scroll"];
+  const recovery = ["meditasi", "reading", "baca", "olahraga", "journaling", "jalan"];
+  
+  for (let h of highDopamine) {
+    if (a.includes(h)) return "HIGH";
   }
 
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Gunakan method POST" });
+  for (let r of recovery) {
+    if (a.includes(r)) return "RECOVERY";
   }
 
-  const { activities } = req.body;
+  return "NEUTRAL";
+}
 
-  if (!activities) {
-    return res.status(400).json({ error: "Data aktivitas kosong" });
-  }
+/* -----------------------------
+   UI RENDER
+------------------------------*/
+
+function render() {
+  let total = 0;
+  let text = "";
+
+  data.forEach((d, i) => {
+    total += d.m;
+    text += `${i + 1}. ${d.a} - ${d.m} menit [${d.type}]\n`;
+  });
+
+  document.getElementById("total").innerText = "Total: " + total + " menit";
+  document.getElementById("list").innerText = text || "Belum ada data";
+}
+
+function tambah() {
+  const a = document.getElementById("act").value.trim();
+  const m = Number(document.getElementById("min").value);
+
+  if (!a || !m) return alert("Isi aktivitas dan durasi dengan benar");
+
+  const type = classify(a);
+
+  data.push({ a, m, type });
+
+  document.getElementById("act").value = "";
+  document.getElementById("min").value = "";
+
+  render();
+}
+
+/* -----------------------------
+   ANALISIS AI (BACKEND)
+------------------------------*/
+
+async function analisis() {
+  if (data.length === 0) return;
+
+  document.getElementById("result").innerText = "Menganalisis kondisi mental...";
+
+  const daftar = data.map((d, i) =>
+    `${i + 1}. ${d.a} - ${d.m} menit (${d.type})`
+  ).join("\n");
 
   try {
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const res = await fetch("https://activity-ai-backend.vercel.app/api/analyze", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        input: `
-Berikut adalah daftar aktivitas harian mahasiswa:
-
-${activities}
-
-Tolong simpulkan pola aktivitas tersebut.
-Beri penilaian apakah mahasiswa cenderung rajin, seimbang, kurang produktif, atau perlu evaluasi.
-Berikan alasan singkat dan 2 saran perbaikan.
-Gunakan bahasa Indonesia yang sederhana.
-        `
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activities: daftar })
     });
 
-    const data = await response.json();
+    const json = await res.json();
 
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: data.error?.message || "Gagal mendapatkan respons dari OpenAI"
-      });
-    }
-
-    let text = "";
-
-    try {
-      text = data.output[0].content[0].text;
-    } catch (e) {
-      text = JSON.stringify(data);
-    }
-
-    return res.status(200).json({
-      result: text
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      error: "Gagal menghubungi AI"
-    });
+    document.getElementById("result").innerText =
+      json.result || json.error || "Tidak ada hasil";
+  } catch {
+    document.getElementById("result").innerText = "Gagal koneksi ke AI";
   }
 }
+
+/* -----------------------------
+   GENERATE IMAGE AI
+------------------------------*/
+
+async function generateImage() {
+  if (data.length === 0) {
+    document.getElementById("status").innerText = "Tambahkan aktivitas terlebih dahulu";
+    return;
+  }
+
+  document.getElementById("status").innerText = "Membuat visual otak...";
+  document.getElementById("img").style.display = "none";
+
+  const daftar = data.map((d, i) =>
+    `${i + 1}. ${d.a} - ${d.m} menit (${d.type})`
+  ).join("\n");
+
+  try {
+    const res = await fetch("https://activity-ai-backend.vercel.app/api/generate-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ activities: daftar })
+    });
+
+    const json = await res.json();
+
+    if (json.image) {
+      document.getElementById("img").src = "data:image/png;base64," + json.image;
+      document.getElementById("img").style.display = "block";
+      document.getElementById("status").innerText = "Visualisasi berhasil dibuat";
+    } else {
+      document.getElementById("status").innerText = json.error || "Gagal membuat gambar";
+    }
+
+  } catch {
+    document.getElementById("status").innerText = "Gagal menghubungi server";
+  }
+}
+
+render();
