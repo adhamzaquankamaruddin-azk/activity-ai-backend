@@ -23,32 +23,36 @@ Berdasarkan aktivitas berikut:
 
 ${activities}
 
-Bayangkan mahasiswa tersebut direpresentasikan sebagai seekor hewan lucu.
+Analisis kondisi mental dan tingkat stimulasi digital pengguna.
 
-Tentukan:
+Kemudian buat satu gambar ilustrasi abstrak yang menggambarkan "bentuk pikiran" pengguna hari ini.
 
-- jenis hewan yang sesuai dengan kepribadian dan pola aktivitasnya
+Interpretasi visual:
 
-- ekspresi wajah (rajin, malas, santai, lelah, fokus, dll)
+- Jika aktivitas didominasi media sosial / game / scrolling:
+  gambarkan otak atau pikiran sebagai kondisi OVERSTIMULATED
+  (contoh: kabel kusut, glitch digital, cahaya berlebihan, noise visual, layar bertumpuk)
 
-- gaya visual yang lucu, imut, dan menarik
+- Jika aktivitas seimbang:
+  gambarkan kondisi NEUTRAL BALANCE
+  (contoh: pola geometris stabil, cahaya lembut, ruang modern tenang)
 
-Buat satu gambar saja (single character), bukan banyak adegan.
+- Jika dominan meditasi / baca / olahraga ringan:
+  gambarkan RECOVERY / CALM MIND
+  (contoh: taman zen, air tenang, awan lembut, cahaya hangat, otak lebih terorganisir)
 
-Ketentuan:
+Ketentuan visual:
 
-- gaya ilustrasi kartun / chibi / cute
-
-- warna cerah dan menarik
-
-- fokus pada satu karakter utama
-
-- boleh menambahkan properti kecil (buku, HP, bantal, dll) sesuai aktivitas
-
-- jangan menampilkan teks di dalam gambar
-
-Gambar harus mencerminkan kepribadian berdasarkan aktivitas tersebut.
-    `;
+- gaya ilustrasi: digital art, semi-surreal, modern, atmosferik
+- fokus pada satu komposisi utama (bukan banyak scene)
+- tidak boleh ada teks di dalam gambar
+- tidak boleh ada karakter manusia realistis
+- bentuk boleh abstrak (otak, energi, ruang mental, simbol)
+- gunakan warna sesuai kondisi mental:
+  - overstimulated = merah, neon, glitch, kontras tinggi
+  - neutral = biru, abu, soft tone
+  - recovery = hijau, emas lembut, pastel
+`;
 
     const response = await fetch("https://api.openai.com/v1/images/generations", {
       method: "POST",
